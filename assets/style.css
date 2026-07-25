@@ -1,0 +1,432 @@
+/* ==========================================================================
+   High Five — gedeeld design system
+   Eén stylesheet voor de homepage en alle tools in /tools/<naam>/.
+   Mobile-first. Geen frameworks, geen build-stap.
+   ========================================================================== */
+
+/* ---- 1. Design tokens -------------------------------------------------- */
+:root {
+  /* Kleur */
+  --cream:  #f7f3ee;
+  --white:  #ffffff;
+  --forest: #1e3d2f;
+  --coral:  #e8472a;
+  --ink:    #1a1a1a;
+  --mist:   #e8e4de;
+  --muted:  #68635f;
+
+  /* Blush-tinten voor gradients en orbs */
+  --blush-peach: #ffd9c6;
+  --blush-pink:  #fbe4ea;
+  --blush-mint:  #dcedde;
+  --blush-sky:   #d8ecea;
+
+  /* Spacing (4-punts schaal) */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 72px;
+
+  /* Vorm & diepte */
+  --radius-s: 14px;
+  --radius-m: 20px;
+  --radius-l: 28px;
+  --shadow-card: 0 12px 40px rgba(30, 61, 47, .08);
+  --shadow-lift: 0 18px 50px rgba(30, 61, 47, .13);
+
+  /* Typografie */
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ---- 2. Basis ----------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: var(--s-5) var(--s-4) var(--s-7);
+}
+
+::selection { background: var(--blush-peach); }
+
+:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---- 3. Typografie ------------------------------------------------------ */
+h1 {
+  margin: 0;
+  font-size: clamp(38px, 9vw, 64px);
+  line-height: .95;
+  letter-spacing: -.055em;
+  font-weight: 800;
+}
+
+h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -.03em;
+  font-weight: 750;
+}
+
+.eyebrow {
+  margin: 0 0 var(--s-3);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--coral);
+}
+
+.lede {
+  margin: var(--s-4) 0 0;
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+/* ---- 4. Siteframe: header & footer -------------------------------------- */
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) 0 var(--s-6);
+}
+
+.site-header img { width: 30px; height: 30px; display: block; }
+
+.site-header .wordmark {
+  font-weight: 800;
+  letter-spacing: -.03em;
+  font-size: 17px;
+  color: var(--forest);
+  text-decoration: none;
+}
+
+.site-footer {
+  margin-top: var(--s-7);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ---- 5. De orb (signatuur) ---------------------------------------------- */
+/* Zachte gradientbol. Kleur per tool via --orb-a / --orb-b. */
+.orb {
+  --orb-a: var(--blush-peach);
+  --orb-b: var(--blush-mint);
+  width: var(--orb-size, 150px);
+  height: var(--orb-size, 150px);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95), rgba(255,255,255,0) 55%),
+    radial-gradient(circle at 70% 75%, var(--orb-b), rgba(255,255,255,0) 70%),
+    radial-gradient(circle at 45% 55%, var(--orb-a), var(--orb-b));
+  filter: blur(6px);
+}
+
+/* Ambient orb achter de hero */
+.hero {
+  position: relative;
+  padding: var(--s-6) 0 var(--s-7);
+}
+
+.hero .orb {
+  position: absolute;
+  right: -30px;
+  top: -10px;
+  --orb-size: 190px;
+  opacity: .8;
+  z-index: 0;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+.hero > :not(.orb) { position: relative; z-index: 1; }
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-18px, 14px) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .orb { animation: none; }
+  * { transition-duration: .01ms !important; }
+}
+
+/* ---- 6. Pill-label ------------------------------------------------------- */
+.pill {
+  display: inline-block;
+  padding: 7px 16px;
+  border: 1.5px solid rgba(26, 26, 26, .28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .55);
+  backdrop-filter: blur(3px);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+/* ---- 7. Tool-kaarten (homepage) ------------------------------------------ */
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-4);
+}
+
+@media (min-width: 640px) {
+  .tool-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.tool-card {
+  display: block;
+  background: var(--white);
+  border-radius: var(--radius-l);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.tool-card:active { transform: scale(.985); }
+
+@media (hover: hover) {
+  .tool-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+  }
+  .tool-card:hover .tool-visual .orb { transform: scale(1.07); }
+}
+
+/* Het witte vlak met orb + pill, zoals de referentiebeelden */
+.tool-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  background:
+    linear-gradient(135deg, var(--card-wash-a, #fdf7f3), var(--card-wash-b, #f2f7f1));
+}
+
+.tool-visual .orb {
+  --orb-size: 46%;
+  transition: transform .4s ease;
+}
+
+.tool-visual .pill { position: absolute; }
+
+.tool-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5) var(--s-5);
+}
+
+.tool-meta p {
+  margin: var(--s-1) 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.tool-meta .arrow {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--forest);
+  color: var(--white);
+  font-size: 16px;
+}
+
+/* ---- 8. Formulieren ------------------------------------------------------ */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-l);
+  padding: var(--s-4);
+  box-shadow: var(--shadow-card);
+}
+
+.card h2 { margin-bottom: var(--s-4); }
+
+.field { margin-bottom: var(--s-3); }
+.field:last-child { margin-bottom: 0; }
+
+label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.input-wrap { position: relative; }
+
+input[type="text"],
+input:not([type]) {
+  width: 100%;
+  border: 1.5px solid #d9d4cd;
+  background: var(--white);
+  color: var(--ink);
+  border-radius: var(--radius-s);
+  padding: 14px 66px 14px 14px;
+  font: inherit;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+input:focus {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 3px rgba(30, 61, 47, .12);
+}
+
+.unit {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 800;
+  font-size: 13px;
+  color: #77716b;
+  pointer-events: none;
+}
+
+/* ---- 9. Knoppen ---------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, opacity .15s ease;
+}
+
+.btn:active { transform: scale(.97); }
+
+.btn-primary { background: var(--forest); color: var(--white); }
+.btn-ghost   { background: transparent; color: var(--muted); padding: 8px 12px; }
+.btn-ghost:hover { color: var(--ink); }
+
+/* ---- 10. Samenvatting / metrics ------------------------------------------ */
+.summary {
+  margin-top: var(--s-4);
+  background: var(--forest);
+  color: var(--white);
+  border-radius: var(--radius-l);
+  padding: var(--s-5);
+}
+
+.summary h2 { margin: 0 0 var(--s-4); font-size: 21px; }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+}
+
+@media (min-width: 640px) {
+  .summary-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.metric {
+  background: rgba(255, 255, 255, .1);
+  border-radius: var(--radius-s);
+  padding: var(--s-4);
+  min-width: 0;
+}
+
+.metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  opacity: .72;
+  font-weight: 750;
+}
+
+.metric-value {
+  margin-top: 6px;
+  font-size: clamp(19px, 4.5vw, 28px);
+  font-weight: 850;
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ---- 11. Statusregel & terug-link ---------------------------------------- */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 20px;
+  margin-top: var(--s-3);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.status.is-loading::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--coral);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: .35; transform: scale(.85); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--s-4);
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.back-link:hover { color: var(--forest); }
+
+/* ---- 12. Tool-lay-out (twee kolommen, ook op mobiel) ---------------------- */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .columns { gap: var(--s-2); }
+  .card { padding: var(--s-3); border-radius: var(--radius-m); }
+  .card h2 { font-size: 18px; }
+  input[type="text"],
+  input:not([type]) { padding: 13px 50px 13px 11px; font-size: 16px; }
+  .unit { right: 10px; font-size: 11px; }
+}

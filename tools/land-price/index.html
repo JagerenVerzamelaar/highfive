@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1e3d2f">
+  <meta name="description" content="Reken landprijzen in Sri Lanka om tussen LKR, USD en EUR per perch, acre, hectare en m².">
+  <title>Landprijs omrekenaar — High Five</title>
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<main>
+
+  <a class="back-link" href="../../">← Alle tools</a>
+
+  <header class="hero" style="padding-top:0">
+    <div class="orb" aria-hidden="true" style="--orb-a:#ffd9c6;--orb-b:#dcedde;--orb-size:150px"></div>
+    <h1>Landprijs<br>omrekenaar</h1>
+    <p class="lede">Vul één bedrag en één oppervlakte in. Alle andere velden rekenen direct mee.</p>
+  </header>
+
+  <div class="columns">
+
+    <section class="card" aria-labelledby="h-money">
+      <h2 id="h-money">Bedrag</h2>
+      <div class="field">
+        <label for="money-lkr">Sri Lankaanse roepie</label>
+        <div class="input-wrap">
+          <input id="money-lkr" data-money="LKR" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">LKR</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="money-usd">Amerikaanse dollar</label>
+        <div class="input-wrap">
+          <input id="money-usd" data-money="USD" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">USD</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="money-eur">Euro</label>
+        <div class="input-wrap">
+          <input id="money-eur" data-money="EUR" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">EUR</span>
+        </div>
+      </div>
+      <div class="status is-loading" id="rate-status" role="status" aria-live="polite">
+        Wisselkoersen ophalen…
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-area">
+      <h2 id="h-area">Oppervlakte</h2>
+      <div class="field">
+        <label for="area-perch">Perch</label>
+        <div class="input-wrap">
+          <input id="area-perch" data-area="perch" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">perch</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="area-acre">Acre</label>
+        <div class="input-wrap">
+          <input id="area-acre" data-area="acre" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">acre</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="area-hectare">Hectare</label>
+        <div class="input-wrap">
+          <input id="area-hectare" data-area="hectare" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">ha</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="area-m2">Vierkante meter</label>
+        <div class="input-wrap">
+          <input id="area-m2" data-area="m2" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="unit">m²</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="summary" aria-live="polite" aria-labelledby="h-sum">
+    <h2 id="h-sum">Prijsberekening</h2>
+    <div class="summary-grid">
+      <div class="metric">
+        <div class="metric-label">Totaal in euro</div>
+        <div class="metric-value" id="total-eur">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Euro per perch</div>
+        <div class="metric-value" id="per-perch">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Euro per hectare</div>
+        <div class="metric-value" id="per-ha">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Euro per m²</div>
+        <div class="metric-value" id="per-m2">—</div>
+      </div>
+    </div>
+  </section>
+
+  <p style="margin-top:16px">
+    <button class="btn btn-ghost" id="reset" type="button">Wis alle velden</button>
+  </p>
+
+  <footer class="site-footer">
+    De wisselkoersen zijn indicatief. 1 Sri Lankaanse perch = 25,29285 m².
+  </footer>
+
+</main>
+
+<script src="../../assets/script.js"></script>
+<script>
+  /* Berekeningen zijn identiek aan v1 van deze tool.
+     Nieuw: metric "euro per perch" (zelfde bronwaarden), reset-knop,
+     laadstatus met indicator en aria-live voor screenreaders. */
+
+  const moneyInputs = [...document.querySelectorAll('[data-money]')];
+  const areaInputs  = [...document.querySelectorAll('[data-area]')];
+
+  const areaInM2 = {
+    perch: 25.29285264,
+    acre: 4046.8564224,
+    hectare: 10000,
+    m2: 1
+  };
+
+  // Ingebouwde back-upkoersen zodat de tool ook offline/preview werkt.
+  // Online worden deze waar mogelijk automatisch ververst.
+  let eurRates = { EUR: 1, USD: 1.17, LKR: 360 };
+  let currentMoneyEUR = null;
+  let currentAreaM2 = null;
+  let updating = false;
+
+  function updateSummary() {
+    document.querySelector('#total-eur').textContent =
+      currentMoneyEUR !== null ? HF.formatEUR(currentMoneyEUR, 0) : '—';
+
+    if (currentMoneyEUR !== null && currentAreaM2 && currentAreaM2 > 0) {
+      document.querySelector('#per-perch').textContent =
+        HF.formatEUR(currentMoneyEUR / (currentAreaM2 / areaInM2.perch), 0);
+      document.querySelector('#per-ha').textContent =
+        HF.formatEUR(currentMoneyEUR / (currentAreaM2 / 10000), 0);
+      document.querySelector('#per-m2').textContent =
+        HF.formatEUR(currentMoneyEUR / currentAreaM2, 2);
+    } else {
+      document.querySelector('#per-perch').textContent = '—';
+      document.querySelector('#per-ha').textContent = '—';
+      document.querySelector('#per-m2').textContent = '—';
+    }
+  }
+
+  function updateMoney(source) {
+    if (updating || !eurRates) return;
+    const amount = HF.parseNumber(source.value);
+
+    if (amount === null) {
+      currentMoneyEUR = null;
+      updating = true;
+      moneyInputs.filter(i => i !== source).forEach(i => i.value = '');
+      updating = false;
+      updateSummary();
+      return;
+    }
+
+    const code = source.dataset.money;
+    currentMoneyEUR = code === 'EUR' ? amount : amount / eurRates[code];
+
+    updating = true;
+    moneyInputs.forEach(input => {
+      if (input === source) return;
+      const target = input.dataset.money;
+      const value = target === 'EUR' ? currentMoneyEUR : currentMoneyEUR * eurRates[target];
+      input.value = HF.formatInput(value, target === 'LKR' ? 0 : 2);
+    });
+    updating = false;
+    updateSummary();
+  }
+
+  function updateArea(source) {
+    if (updating) return;
+    const amount = HF.parseNumber(source.value);
+
+    if (amount === null) {
+      currentAreaM2 = null;
+      updating = true;
+      areaInputs.filter(i => i !== source).forEach(i => i.value = '');
+      updating = false;
+      updateSummary();
+      return;
+    }
+
+    currentAreaM2 = amount * areaInM2[source.dataset.area];
+
+    updating = true;
+    areaInputs.forEach(input => {
+      if (input === source) return;
+      const value = currentAreaM2 / areaInM2[input.dataset.area];
+      input.value = HF.formatInput(value, input.dataset.area === 'm2' ? 2 : 4);
+    });
+    updating = false;
+    updateSummary();
+  }
+
+  moneyInputs.forEach(input => input.addEventListener('input', () => updateMoney(input)));
+  areaInputs.forEach(input => input.addEventListener('input', () => updateArea(input)));
+
+  document.querySelector('#reset').addEventListener('click', () => {
+    updating = true;
+    [...moneyInputs, ...areaInputs].forEach(i => i.value = '');
+    updating = false;
+    currentMoneyEUR = null;
+    currentAreaM2 = null;
+    updateSummary();
+    moneyInputs[0].focus();
+  });
+
+  async function loadRates() {
+    const status = document.querySelector('#rate-status');
+    status.textContent = 'Wisselkoersen ophalen…';
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+
+      const res = await fetch(
+        'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json',
+        { signal: controller.signal, cache: 'no-store' }
+      );
+      clearTimeout(timeout);
+
+      if (!res.ok) throw new Error('Koersbron niet bereikbaar');
+      const data = await res.json();
+      if (!data.eur?.usd || !data.eur?.lkr) throw new Error('Valuta ontbreekt');
+
+      eurRates = { EUR: 1, USD: Number(data.eur.usd), LKR: Number(data.eur.lkr) };
+      status.textContent = `Online koersen bijgewerkt: ${data.date || 'vandaag'}`;
+    } catch (e) {
+      status.textContent = 'Offline: ingebouwde indicatieve koersen worden gebruikt.';
+    }
+    status.classList.remove('is-loading');
+
+    // Herbereken met de nieuwe koersen als er al iets is ingevuld.
+    const filled = moneyInputs.find(i => HF.parseNumber(i.value) !== null);
+    if (filled) updateMoney(filled);
+  }
+
+  // De rekentool werkt meteen, ook voordat een online koers is opgehaald.
+  loadRates();
+  updateSummary();
+</script>
+</body>
+</html>

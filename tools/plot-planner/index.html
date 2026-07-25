@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#f7f3ee">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Surface Plot Planner — High Five</title>
+<meta name="description" content="Plan cabins, hoofdgebouw en voorzieningen op je kavel, met privacycirkels en clash-detectie.">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f3ee; --panel:#FFFFFF; --ink:#1a1a1a; --muted:#68635f; --line:#e3ded7;
+  --accent:#1e3d2f; --accent-soft:#e6eee8; --warn:#e8472a; --warn-soft:#fdeae4;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:"Inter",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overscroll-behavior:none}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+button{font-family:var(--sans);cursor:pointer}
+
+/* ---------- kaart = held ---------- */
+#map{flex:1;position:relative;min-height:0;touch-action:none;overflow:hidden;background:var(--paper)}
+#map svg{width:100%;height:100%;display:block}
+.readout{position:absolute;left:14px;top:66px;font-family:var(--mono);font-size:12.5px;
+  color:var(--muted);pointer-events:none;line-height:1.7}
+.readout b{color:var(--ink);font-weight:600}
+.fit{position:absolute;right:14px;top:12px;height:44px;padding:0 16px;border-radius:22px;
+  background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:13px}
+.fit:active{color:var(--accent);border-color:var(--accent)}
+.home{position:absolute;left:14px;top:12px;z-index:5;width:44px;height:44px;display:grid;place-items:center;
+  border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  text-decoration:none;font-size:18px}
+.home:active{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- paneel ---------- */
+#panel{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);
+  max-height:52dvh;display:flex;flex-direction:column;
+  box-shadow:0 -8px 24px rgba(26,26,26,.05)}
+#body{overflow-y:auto;padding:6px 18px 26px;-webkit-overflow-scrolling:touch}
+#grab{height:30px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}
+#grab div{width:48px;height:5px;border-radius:3px;background:var(--line)}
+#panel.min #body{display:none}
+
+label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:7px}
+.field{margin-bottom:16px}
+.num{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.num button{width:56px;flex:0 0 56px;height:54px;background:none;border:none;
+  color:var(--accent);font-size:26px}
+.num button:active{background:var(--accent-soft)}
+.num input{flex:1;min-width:0;border:none;background:none;color:var(--ink);text-align:center;
+  font-family:var(--mono);font-size:19px;height:54px;padding:0}
+.num input:focus{outline:none;background:var(--accent-soft)}
+input.plain{width:100%;height:54px;background:var(--panel);border:1px solid var(--line);
+  color:var(--ink);font-family:var(--mono);font-size:17px;padding:0 14px;border-radius:12px}
+input.plain:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.two{display:flex;gap:12px}
+.two>div{flex:1;min-width:0}
+
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.seg button{flex:1;background:none;border:none;color:var(--muted);font-size:14px;height:50px}
+.seg button.on{background:var(--ink);color:#fff;font-weight:600}
+
+.stats{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:18px}
+.stats div{flex:1;padding:12px 4px;text-align:center}
+.stats b{display:block;font-family:var(--mono);font-size:19px;font-weight:600}
+.stats span{font-size:10.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;margin:24px 0 12px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:14px}
+td{padding:10px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+td:last-child{text-align:right;color:var(--ink)}
+
+.wide{width:100%;height:54px;border-radius:12px;font-size:15px;font-weight:600;
+  background:var(--panel);border:1px solid var(--line);color:var(--ink);margin-top:10px}
+.wide.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.wide.ghost{border:none;color:var(--muted);font-weight:500}
+.wide.danger{color:var(--warn);border-color:#f3cabc}
+
+.note{font-size:14px;line-height:1.5;padding:12px 14px;border-radius:10px;margin-top:10px;
+  background:var(--warn-soft);color:#a03318}
+.note.ok{background:var(--accent-soft);color:var(--accent)}
+.hint{font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px}
+
+.head{display:flex;align-items:center;gap:12px;margin:8px 0 18px}
+.head .sw{width:20px;height:20px;border-radius:6px;flex:0 0 20px}
+.head b{font-size:19px}
+.head em{font-style:normal;margin-left:auto;font-family:var(--mono);font-size:14px;color:var(--muted)}
+.back{background:none;border:none;color:var(--accent);font-size:15px;font-weight:600;
+  padding:0;height:auto;margin:6px 0 4px}
+
+.fab{position:fixed;right:16px;bottom:calc(52dvh + 16px);z-index:20;background:var(--ink);
+  color:#fff;border:none;border-radius:29px;font-size:16px;font-weight:600;height:58px;
+  padding:0 22px;box-shadow:0 8px 20px rgba(26,26,26,.25)}
+#panel.min ~ .fab{bottom:56px}
+
+/* ---------- pop-up ---------- */
+.scrim{position:fixed;inset:0;background:rgba(26,26,26,.4);z-index:40;display:none;
+  align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.modal{background:var(--panel);width:100%;max-width:480px;border-radius:20px 20px 0 0;
+  padding:20px 18px 26px;max-height:90dvh;overflow-y:auto}
+.chips{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
+.chips button{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
+  color:var(--ink);font-size:15px;height:56px;display:flex;align-items:center;gap:11px;
+  padding:0 13px;text-align:left}
+.chips button.on{border-color:var(--ink);background:#f3efe8}
+.chips .sw{width:15px;height:15px;border-radius:4px;flex:0 0 15px}
+.acts{display:flex;gap:12px;margin-top:6px}
+.acts button{flex:1;height:56px;border-radius:12px;font-size:16px;font-weight:600;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.acts button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+@media(min-width:860px){
+  body{flex-direction:row}
+  #map{order:2}
+  #panel{order:1;width:380px;flex:0 0 380px;max-height:none;height:100dvh;
+    border-top:none;border-right:1px solid var(--line);box-shadow:none}
+  #grab{display:none}
+  .fab{bottom:26px;right:26px}
+  .chips{grid-template-columns:repeat(3,1fr)}
+  .scrim{align-items:center}
+  .modal{border-radius:20px}
+}
+</style>
+
+</head>
+<body>
+<div id="map">
+  <a class="home" href="../../" aria-label="Alle tools">←</a>
+  <div class="readout" id="readout"></div>
+  <button class="fit" id="zFit">Passend</button>
+</div>
+
+<div id="panel">
+  <div id="grab"><div></div></div>
+  <div id="body"></div>
+</div>
+
+<button class="fab" id="fab">+ Toevoegen</button>
+
+<div class="scrim" id="scrim">
+  <div class="modal">
+    <div class="chips" id="chips"></div>
+    <div class="field"><label>Naam</label><input class="plain" type="text" id="mName"></div>
+    <div class="two field">
+      <div><label>Breedte (m)</label><input class="plain" type="number" id="mW" inputmode="numeric"></div>
+      <div><label>Lengte (m)</label><input class="plain" type="number" id="mL" inputmode="numeric"></div>
+    </div>
+    <div class="field"><label>Aantal</label>
+      <div class="num"><button data-n="mN" data-d="-1">−</button>
+        <input type="number" id="mN" value="1" inputmode="numeric">
+        <button data-n="mN" data-d="1">+</button></div></div>
+    <div class="acts">
+      <button id="mCancel">Annuleren</button>
+      <button id="mAdd" class="primary">Plaatsen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PERCH=25.29, ACRE=4046.86, HA=10000;
+const PRESETS=[
+  {k:'Cabin',w:6,l:5,c:'#B08968',priv:true},
+  {k:'Hoofdgebouw',w:30,l:20,c:'#7D8C74',anchor:true},
+  {k:'Kamerblok',w:15,l:12,c:'#C2A878'},
+  {k:'Zwembad',w:15,l:8,c:'#7FAEC4'},
+  {k:'Staff & techniek',w:14,l:10,c:'#9C9C90'},
+  {k:'Parkeren',w:20,l:10,c:'#C9C7BC'},
+  {k:'Tuin',w:20,l:15,c:'#A5BE8C'},
+  {k:'Eigen…',w:10,l:10,c:'#A38FA0'},
+];
+
+let S={plot:{w:100,l:100},sb:5,pr:12,price:0,items:[],sel:null,next:1,mode:'perch',scope:'one'};
+let view={x:0,y:0,w:100,h:100};
+let draft=PRESETS[0];
+
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const nf=n=>Number(n).toLocaleString('nl-NL',{maximumFractionDigits:0});
+const nf1=n=>Number(n).toLocaleString('nl-NL',{maximumFractionDigits:1});
+const nf2=n=>Number(n).toLocaleString('nl-NL',{maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+$('grab').onclick=()=>$('panel').classList.toggle('min');
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-n]');if(!b)return;
+  const inp=$(b.dataset.n);
+  inp.value=Math.max(0,(+inp.value||0)+ +b.dataset.d);
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+});
+
+/* ================= PANEEL (contextueel) ================= */
+function panel(){
+  if(S.sel!==null){ objectPanel(); return; }
+  plotPanel();
+}
+
+function plotPanel(){
+  const A=S.plot.w*S.plot.l;
+  const used=S.items.reduce((s,i)=>s+i.w*i.l,0);
+  const cabins=S.items.filter(i=>i.priv);
+  const eur=v=>'€ '+nf(v);
+  $('body').innerHTML=`
+    <div class="stats">
+      <div><b>${nf(A)}</b><span>m²</span></div>
+      <div><b>${nf(A/PERCH)}</b><span>perch</span></div>
+      <div><b>${nf2(A/ACRE)}</b><span>acre</span></div>
+      <div><b>${nf2(A/HA)}</b><span>ha</span></div>
+    </div>
+    <div class="seg">
+      <button id="mo1" class="${S.mode==='perch'?'on':''}">Perch</button>
+      <button id="mo2" class="${S.mode==='sides'?'on':''}">Breedte × lengte</button>
+    </div>
+    <div id="inPerch" style="display:${S.mode==='perch'?'':'none'}" class="field">
+      <label>Aantal perch</label>
+      <div class="num"><button data-n="perch" data-d="-10">−</button>
+        <input type="number" id="perch" value="${Math.round(A/PERCH)}" inputmode="numeric">
+        <button data-n="perch" data-d="10">+</button></div>
+    </div>
+    <div id="inSides" style="display:${S.mode==='sides'?'':'none'}">
+      <div class="two field">
+        <div><label>Breedte (m)</label><input class="plain" type="number" id="pw" value="${S.plot.w}" inputmode="numeric"></div>
+        <div><label>Lengte (m)</label><input class="plain" type="number" id="pl" value="${S.plot.l}" inputmode="numeric"></div>
+      </div>
+    </div>
+    <div class="two field">
+      <div><label>Rand vrijhouden (m)</label><input class="plain" type="number" id="sb" value="${S.sb}" inputmode="numeric"></div>
+      <div><label>Privacy cabins (m)</label><input class="plain" type="number" id="pr" value="${S.pr}" inputmode="numeric"></div>
+    </div>
+
+    <h3>Prijs</h3>
+    <div class="field"><label>Euro per perch</label>
+      <input class="plain" type="number" id="ppp" value="${S.price||''}" inputmode="numeric"></div>
+    ${S.price?`<table>
+      <tr><td>Totaal</td><td><b>${eur(S.price*A/PERCH)}</b></td></tr>
+      <tr><td>Per m²</td><td>€ ${nf2(S.price/PERCH)}</td></tr>
+      <tr><td>Per acre</td><td>${eur(S.price*160)}</td></tr>
+      <tr><td>Per hectare</td><td>${eur(S.price*HA/PERCH)}</td></tr>
+    </table>`:''}
+
+    ${flags(used,cabins)}
+    <button class="wide ghost" id="saveBtn">Plan opslaan</button>
+    <button class="wide ghost" id="openBtn">Plan openen</button>
+    <input type="file" id="file" accept="application/json" hidden>`;
+
+  $('mo1').onclick=()=>{S.mode='perch';panel();};
+  $('mo2').onclick=()=>{S.mode='sides';panel();};
+  const re=()=>{draw();panel();};
+  const perchEl=$('perch');
+  if(perchEl)perchEl.oninput=e=>{const p=clamp(+e.target.value||1,1,4000),s=Math.round(Math.sqrt(p*PERCH));
+    S.plot={w:s,l:s};fit();draw();refreshStats();};
+  const pwEl=$('pw'),plEl=$('pl');
+  if(pwEl)pwEl.oninput=e=>{S.plot.w=clamp(+e.target.value||10,10,900);fit();draw();refreshStats();};
+  if(plEl)plEl.oninput=e=>{S.plot.l=clamp(+e.target.value||10,10,900);fit();draw();refreshStats();};
+  $('sb').oninput=e=>{S.sb=clamp(+e.target.value||0,0,60);draw();};
+  $('pr').oninput=e=>{S.pr=clamp(+e.target.value||0,0,80);draw();};
+  $('ppp').oninput=e=>{S.price=+e.target.value||0;refreshStats();};
+  $('saveBtn').onclick=save; $('openBtn').onclick=()=>$('file').click();
+  $('file').onchange=open;
+}
+/* prijs/stat-verversing zonder het hele paneel te herbouwen (focusbehoud) */
+let statTimer=0;
+function refreshStats(){clearTimeout(statTimer);statTimer=setTimeout(()=>{if(S.sel===null)plotPanel();},700);}
+
+function flags(used,cabins){
+  const A=S.plot.w*S.plot.l,f=[];
+  const clash=clashCount(cabins);
+  if(clash)f.push(`${clash} cabins staan te dicht op elkaar (binnen ${S.pr} m).`);
+  const out=S.items.filter(i=>i.x<S.sb||i.y<S.sb||i.x+i.w>S.plot.w-S.sb||i.y+i.l>S.plot.l-S.sb).length;
+  if(S.sb&&out)f.push(`${out} element(en) staan te dicht op de rand.`);
+  if(A-used<0)f.push('Er staat meer op het terrein dan erop past.');
+  if(!f.length&&S.items.length)
+    return `<div class="note ok">Alles past · ${nf(A-used)} m² vrij (${nf1((A-used)/A*100)}%)</div>`;
+  return f.map(t=>`<div class="note">${t}</div>`).join('');
+}
+/* privacy-straal vanaf de gevel: groeit mee met de cabin */
+const privR=it=>S.pr+Math.hypot(it.w,it.l)/2;
+function clashCount(cabins){
+  const c=new Set();
+  for(let i=0;i<cabins.length;i++)for(let j=i+1;j<cabins.length;j++){
+    const a=cabins[i],b=cabins[j];
+    if(Math.hypot(a.x+a.w/2-b.x-b.w/2,a.y+a.l/2-b.y-b.l/2)<privR(a)+privR(b)){c.add(a.id);c.add(b.id);}
+  }
+  return c.size;
+}
+
+function objectPanel(){
+  const it=S.items.find(i=>i.id===S.sel); if(!it){S.sel=null;panel();return;}
+  const same=S.items.filter(i=>i.name===it.name).length;
+  $('body').innerHTML=`
+    <button class="back" id="back">← Terug naar perceel</button>
+    <div class="head"><span class="sw" style="background:${it.c}"></span>
+      <b>${esc(it.name)}</b><em>${it.w} × ${it.l} m · ${nf(it.w*it.l)} m²</em></div>
+    ${same>1?`<div class="seg">
+      <button id="s1" class="${S.scope==='one'?'on':''}">Dit object</button>
+      <button id="s2" class="${S.scope==='all'?'on':''}">Alle ${same}</button></div>`:''}
+    <div class="field"><label>Breedte (m)</label>
+      <div class="num"><button data-n="ew" data-d="-1">−</button>
+        <input type="number" id="ew" value="${it.w}" inputmode="numeric">
+        <button data-n="ew" data-d="1">+</button></div></div>
+    <div class="field"><label>Lengte (m)</label>
+      <div class="num"><button data-n="el" data-d="-1">−</button>
+        <input type="number" id="el" value="${it.l}" inputmode="numeric">
+        <button data-n="el" data-d="1">+</button></div></div>
+    <button class="wide" id="erot">Draai 90°</button>
+    <button class="wide" id="edup">Nog een plaatsen</button>
+    <button class="wide danger" id="edel">${S.scope==='all'&&same>1?`Verwijder alle ${same}`:'Verwijder'}</button>
+    <p class="hint">Versleep het object op de kaart om het te verplaatsen.</p>`;
+
+  $('back').onclick=()=>{S.sel=null;draw();panel();};
+  if(same>1){$('s1').onclick=()=>{S.scope='one';objectPanel();};
+             $('s2').onclick=()=>{S.scope='all';objectPanel();};}
+  const targets=()=>S.scope==='all'?S.items.filter(i=>i.name===it.name):[it];
+  const setSize=(k,v)=>{targets().forEach(t=>{
+      t[k]=clamp(v,1,k==='w'?S.plot.w:S.plot.l);
+      t.x=clamp(t.x,0,S.plot.w-t.w);t.y=clamp(t.y,0,S.plot.l-t.l);});
+    draw();};
+  $('ew').oninput=e=>setSize('w',+e.target.value||1);
+  $('el').oninput=e=>setSize('l',+e.target.value||1);
+  $('erot').onclick=()=>{targets().forEach(t=>{[t.w,t.l]=[t.l,t.w];
+    t.x=clamp(t.x,0,S.plot.w-t.w);t.y=clamp(t.y,0,S.plot.l-t.l);});draw();objectPanel();};
+  $('edup').onclick=()=>{const s=findSpot(it.w,it.l);
+    S.items.push({...it,id:S.next++,x:s.x,y:s.y});S.sel=S.next-1;draw();objectPanel();};
+  $('edel').onclick=()=>{const kill=new Set(targets().map(t=>t.id));
+    S.items=S.items.filter(i=>!kill.has(i.id));S.sel=null;draw();panel();};
+}
+
+/* ================= TOEVOEGEN ================= */
+$('chips').innerHTML=PRESETS.map((p,i)=>
+  `<button data-i="${i}"><span class="sw" style="background:${p.c}"></span>${p.k}</button>`).join('');
+$('chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#chips button').forEach(x=>x.classList.toggle('on',x===b));
+  draft=PRESETS[+b.dataset.i];
+  $('mName').value=draft.k==='Eigen…'?'':draft.k;
+  $('mW').value=draft.w;$('mL').value=draft.l;};
+$('fab').onclick=()=>{$('scrim').classList.add('on');document.querySelector('#chips button').click();};
+$('mCancel').onclick=()=>$('scrim').classList.remove('on');
+$('scrim').onclick=e=>{if(e.target===$('scrim'))$('scrim').classList.remove('on');};
+$('mAdd').onclick=()=>{
+  const w=clamp(+$('mW').value||1,1,S.plot.w),l=clamp(+$('mL').value||1,1,S.plot.l);
+  const n=clamp(+$('mN').value||1,1,60),name=($('mName').value||'Naamloos').trim();
+  for(let i=0;i<n;i++){const s=findSpot(w,l);
+    S.items.push({id:S.next++,name,w,l,x:s.x,y:s.y,c:draft.c,
+      priv:!!draft.priv,anchor:!!draft.anchor});}
+  $('scrim').classList.remove('on');S.sel=null;draw();panel();
+};
+function findSpot(w,l){
+  const gap=2,x1=S.plot.w-S.sb-w,y1=S.plot.l-S.sb-l;
+  for(let y=S.sb;y<=y1;y+=2)for(let x=S.sb;x<=x1;x+=2){
+    let ok=true;
+    for(const it of S.items)if(x<it.x+it.w+gap&&it.x<x+w+gap&&y<it.y+it.l+gap&&it.y<y+l+gap){ok=false;break;}
+    if(ok)return{x,y};
+  }
+  return{x:clamp(Math.round((S.plot.w-w)/2),0,S.plot.w-w),y:clamp(Math.round((S.plot.l-l)/2),0,S.plot.l-l)};
+}
+
+/* ================= KAART ================= */
+const map=$('map');
+const FS=()=>view.w/34;
+function fit(){
+  const p=Math.max(S.plot.w,S.plot.l)*0.07;
+  view={x:-p,y:-p,w:S.plot.w+2*p,h:S.plot.l+2*p};
+  applyView();
+}
+function applyView(){const s=$('plan');if(s)s.setAttribute('viewBox',`${view.x} ${view.y} ${view.w} ${view.h}`);}
+$('zFit').onclick=()=>{fit();draw();};
+
+function draw(){
+  const {w,l}=S.plot,fs=FS();
+  const cabins=S.items.filter(i=>i.priv),anchor=S.items.find(i=>i.anchor);
+  let g='';
+
+  /* perceel: papier met dun raster van 10 m */
+  g+=`<rect x="0" y="0" width="${w}" height="${l}" fill="#FFFFFF" stroke="#1a1a1a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  for(let x=10;x<w;x+=10)g+=`<line x1="${x}" y1="0" x2="${x}" y2="${l}" stroke="#edeae3" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  for(let y=10;y<l;y+=10)g+=`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#edeae3" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  if(S.sb>0&&S.sb*2<Math.min(w,l))
+    g+=`<rect x="${S.sb}" y="${S.sb}" width="${w-2*S.sb}" height="${l-2*S.sb}" fill="none"
+        stroke="#b9b3a9" stroke-width="1" stroke-dasharray="${fs*.45} ${fs*.45}" vector-effect="non-scaling-stroke"/>`;
+
+  /* maatvoering */
+  g+=`<text x="${w/2}" y="${-fs*.6}" font-size="${fs*.85}" text-anchor="middle" fill="#68635f" font-family="ui-monospace,monospace">${w} m</text>
+      <text x="${-fs*.6}" y="${l/2}" font-size="${fs*.85}" text-anchor="middle" fill="#68635f"
+        font-family="ui-monospace,monospace" transform="rotate(-90 ${-fs*.6} ${l/2})">${l} m</text>`;
+
+  /* privacy */
+  const clash=new Set();
+  for(let i=0;i<cabins.length;i++)for(let j=i+1;j<cabins.length;j++){
+    const a=cabins[i],b=cabins[j];
+    if(Math.hypot(a.x+a.w/2-b.x-b.w/2,a.y+a.l/2-b.y-b.l/2)<privR(a)+privR(b)){clash.add(a.id);clash.add(b.id);}
+  }
+  if(S.pr>0)cabins.forEach(c=>{const bad=clash.has(c.id);
+    g+=`<circle cx="${c.x+c.w/2}" cy="${c.y+c.l/2}" r="${privR(c)}"
+        fill="${bad?'rgba(232,71,42,.09)':'rgba(30,61,47,.05)'}"
+        stroke="${bad?'#e8472a':'#b7c9bd'}" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`;});
+
+  /* looplijn */
+  let walk=0;
+  if(anchor&&cabins.length){
+    const ax=anchor.x+anchor.w/2,ay=anchor.y+anchor.l/2;let far=null;
+    cabins.forEach(c=>{const d=Math.abs(c.x+c.w/2-ax)+Math.abs(c.y+c.l/2-ay);if(d>walk){walk=d;far=c;}});
+    if(far)g+=`<polyline points="${far.x+far.w/2},${far.y+far.l/2} ${ax},${far.y+far.l/2} ${ax},${ay}"
+      fill="none" stroke="#68635f" stroke-width="1" stroke-dasharray="${fs*.6} ${fs*.4}" vector-effect="non-scaling-stroke"/>`;
+  }
+
+  /* objecten: vlakke rechthoeken */
+  S.items.forEach(it=>{
+    const sel=S.sel===it.id;
+    g+=`<g data-id="${it.id}">
+      <rect x="${it.x}" y="${it.y}" width="${it.w}" height="${it.l}"
+        fill="${it.c}" stroke="${sel?'#1a1a1a':'rgba(26,26,26,.25)'}"
+        stroke-width="${sel?3:1}" vector-effect="non-scaling-stroke"/>`;
+    if(it.w>fs*2.6&&it.l>fs*1.6)
+      g+=`<text x="${it.x+it.w/2}" y="${it.y+it.l/2+fs*.3}" font-size="${fs*.78}" text-anchor="middle"
+          fill="rgba(255,255,255,.95)" font-family="ui-monospace,monospace" pointer-events="none">${esc(it.name)}</text>`;
+    g+=`</g>`;
+  });
+
+  let svg=$('plan');
+  if(!svg){
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.id='plan';svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+    map.insertBefore(svg,map.firstChild);
+  }
+  svg.setAttribute('viewBox',`${view.x} ${view.y} ${view.w} ${view.h}`);
+  svg.innerHTML=g;
+  readout(walk,anchor,cabins);
+}
+
+function readout(walk,anchor,cabins){
+  const A=S.plot.w*S.plot.l;
+  const used=S.items.reduce((s,i)=>s+i.w*i.l,0),cab=cabins.reduce((s,i)=>s+i.w*i.l,0);
+  const per=cabins.length?(A-(used-cab))/cabins.length:0;
+  $('readout').innerHTML=
+    `<b>${nf(A/PERCH)} perch</b> · ${nf2(A/ACRE)} acre<br>`
+    +(cabins.length?`${cabins.length} cabins · <b>${nf(per)} m²</b> per cabin<br>`:'')
+    +(anchor&&cabins.length?`loopafstand max ${nf(walk)} m`:'');
+}
+
+/* ---------- aanraken ---------- */
+const pts=new Map();let act=null,raf=0;
+const toUnits=(e,svg)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());};
+const dist=()=>{const[a,b]=[...pts.values()];return Math.hypot(a.x-b.x,a.y-b.y);};
+const mid=()=>{const[a,b]=[...pts.values()];return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};};
+function unitAt(px,py){
+  const r=map.getBoundingClientRect();
+  const s=Math.min(r.width/view.w,r.height/view.h);
+  const ox=r.left+(r.width-view.w*s)/2,oy=r.top+(r.height-view.h*s)/2;
+  return{x:view.x+(px-ox)/s,y:view.y+(py-oy)/s};
+}
+map.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.fit'))return;
+  pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const svg=$('plan');if(!svg)return;
+  if(pts.size===2){const m=mid();
+    act={t:'pinch',d0:dist(),w0:view.w,h0:view.h,u:unitAt(m.x,m.y)};return;}
+  if(pts.size>2)return;
+  const g=e.target.closest('[data-id]');
+  if(g){const it=S.items.find(i=>i.id===+g.dataset.id);
+    if(it){const p=toUnits(e,svg);
+      act={t:'obj',it,ox:p.x-it.x,oy:p.y-it.y,sx:e.clientX,sy:e.clientY,live:false};}}
+  else act={t:'pan',sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,moved:false};
+  e.preventDefault();
+},{passive:false});
+map.addEventListener('pointermove',e=>{
+  if(!pts.has(e.pointerId))return;
+  pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!act)return;const svg=$('plan');if(!svg)return;
+  if(act.t==='pinch'&&pts.size>=2){
+    const k=clamp(act.d0/dist(),.1,10);
+    const nw=clamp(act.w0*k,12,Math.max(S.plot.w,S.plot.l)*3),nh=act.h0*(nw/act.w0);
+    view.w=nw;view.h=nh;
+    const m=mid(),r=map.getBoundingClientRect();
+    const s=Math.min(r.width/nw,r.height/nh);
+    const ox=r.left+(r.width-nw*s)/2,oy=r.top+(r.height-nh*s)/2;
+    view.x=act.u.x-(m.x-ox)/s;view.y=act.u.y-(m.y-oy)/s;applyView();
+  }else if(act.t==='pan'){
+    const r=map.getBoundingClientRect();
+    const s=Math.min(r.width/view.w,r.height/view.h);
+    if(Math.abs(e.clientX-act.sx)>6||Math.abs(e.clientY-act.sy)>6)act.moved=true;
+    view.x=act.vx-(e.clientX-act.sx)/s;view.y=act.vy-(e.clientY-act.sy)/s;applyView();
+  }else if(act.t==='obj'){
+    if(!act.live&&Math.hypot(e.clientX-act.sx,e.clientY-act.sy)<8)return;
+    act.live=true;
+    const p=toUnits(e,svg),it=act.it;
+    it.x=clamp(Math.round(p.x-act.ox),0,S.plot.w-it.w);
+    it.y=clamp(Math.round(p.y-act.oy),0,S.plot.l-it.l);
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw();});
+  }
+  e.preventDefault();
+},{passive:false});
+function endPointer(e){
+  pts.delete(e.pointerId);
+  if(!act)return;
+  if(act.t==='pan'&&!act.moved&&S.sel!==null){S.sel=null;draw();panel();}
+  else if(act.t==='obj'&&!act.live){S.sel=act.it.id;draw();panel();$('panel').classList.remove('min');}
+  else if(act.t==='obj')draw();
+  if(pts.size<2&&act.t==='pinch'){act=null;draw();return;}
+  if(pts.size===0)act=null;
+}
+map.addEventListener('pointerup',endPointer);
+map.addEventListener('pointercancel',endPointer);
+map.addEventListener('pointerleave',endPointer);
+
+/* ---------- opslaan / openen ---------- */
+function save(){
+  const {plot,sb,pr,price,items}=S;
+  const b=new Blob([JSON.stringify({plot,sb,pr,price,items},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='high-five-terrein.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function open(e){
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    S={...S,...d,sel:null,next:Math.max(0,...(d.items||[]).map(i=>i.id))+1};
+    fit();draw();panel();}catch(_){alert('Dit bestand kon niet gelezen worden.');}};
+  r.readAsText(f);e.target.value='';
+}
+window.addEventListener('resize',applyView);
+
+/* ---------- start ---------- */
+(function(){
+  const add=(name,x,y,w,l,c,o={})=>S.items.push({id:S.next++,name,x,y,w,l,c,...o});
+  [[10,12],[10,38],[10,64],[62,14],[80,40],[80,66],[36,12]].forEach(([x,y])=>
+    add('Cabin',x,y,6,5,'#B08968',{priv:true}));
+  add('Hoofdgebouw',35,52,30,20,'#7D8C74',{anchor:true});
+  add('Zwembad',42,38,15,8,'#7FAEC4');
+  add('Kamerblok',8,84,15,12,'#C2A878');
+  add('Staff & techniek',60,84,14,10,'#9C9C90');
+  add('Parkeren',78,84,20,10,'#C9C7BC');
+  fit();draw();panel();
+})();
+</script>
+</body>
+</html>

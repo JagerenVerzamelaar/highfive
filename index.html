@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f3ee">
+  <meta name="description" content="Kleine, snelle webtools van het High Five Initiative.">
+  <title>High Five — Tools</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+
+  <header class="site-header">
+    <img src="assets/logo.svg" alt="">
+    <a class="wordmark" href="./">High Five</a>
+  </header>
+
+  <section class="hero">
+    <div class="orb" aria-hidden="true"></div>
+    <p class="eyebrow">tools by High Five Initiative.</p>
+    <h1>Kleine tools,<br>grote beslissingen.</h1>
+    <p class="lede">
+      Snelle, mobiele hulpmiddelen voor land, geld en planning in Sri Lanka.
+      Zacht vormgegeven, scherp in de cijfers.
+    </p>
+  </section>
+
+  <!-- Kaarten worden gerenderd vanuit HF.TOOLS in assets/script.js -->
+  <section id="tools" class="tool-grid" aria-label="Alle tools"></section>
+
+  <noscript>
+    <p><a href="tools/land-price/">Landprijs omrekenaar</a> ·
+       <a href="tools/plot-planner/">Surface Plot Planner</a></p>
+  </noscript>
+
+  <footer class="site-footer">
+    © <span id="year"></span> High Five Initiative
+  </footer>
+
+</main>
+
+<script src="assets/script.js"></script>
+<script>
+  HF.renderTools('tools');
+  HF.setYear('year');
+</script>
+</body>
+</html>
