@@ -19,7 +19,7 @@
   <header class="hero" style="padding-top:0">
     <div class="orb" aria-hidden="true" style="--orb-size:150px"></div>
     <h1>Landprijs<br>omrekenaar</h1>
-    <p class="lede">Vul één bedrag en één oppervlakte in. Alle andere velden rekenen direct mee.</p>
+    <p class="lede">Bedrag en oppervlakte zijn losse omrekenaars. Vul daarnaast een vraagprijs per perch in voor de totaalberekening.</p>
   </header>
 
   <div class="columns">
@@ -86,6 +86,22 @@
 
   </div>
 
+  <section class="card" aria-labelledby="h-price" style="margin-top:16px">
+    <h2 id="h-price">Vraagprijs</h2>
+    <p class="hint" style="margin:-8px 0 16px;color:var(--muted);font-size:14px">
+      Prijzen in Sri Lanka worden meestal per perch genoemd. Vul die prijs hier in —
+      losstaand van het bedrag hierboven — en de oppervlakte uit het rechterveld
+      bepaalt de totalen.
+    </p>
+    <div class="field">
+      <label for="price-perch">LKR per perch</label>
+      <div class="input-wrap">
+        <input id="price-perch" inputmode="decimal" autocomplete="off" placeholder="0">
+        <span class="unit">LKR</span>
+      </div>
+    </div>
+  </section>
+
   <section class="summary" aria-live="polite" aria-labelledby="h-sum">
     <h2 id="h-sum">Prijsberekening</h2>
     <div class="summary-grid">
@@ -106,6 +122,7 @@
         <div class="metric-value" id="per-m2">—</div>
       </div>
     </div>
+    <p class="hint" id="price-hint" style="margin:16px 0 0;color:rgba(255,255,255,.8);font-size:13px"></p>
   </section>
 
   <p style="margin-top:16px">
@@ -114,6 +131,7 @@
 
   <footer class="site-footer">
     De wisselkoersen zijn indicatief. 1 Sri Lankaanse perch = 25,29285 m².
+    De prijsberekening gebruikt dezelfde LKR-koers als het Bedrag-blok.
   </footer>
 
 </main>
@@ -121,11 +139,14 @@
 <script src="../../assets/script.js"></script>
 <script>
   /* Berekeningen zijn identiek aan v1 van deze tool.
-     Nieuw: metric "euro per perch" (zelfde bronwaarden), reset-knop,
-     laadstatus met indicator en aria-live voor screenreaders. */
+     Nieuw: de prijsberekening staat los van het Bedrag-veld. "Bedrag" en
+     "Oppervlakte" zijn generieke omrekenaars; de vraagprijs (LKR per perch)
+     wordt vermenigvuldigd met de ingevulde oppervlakte — niet gedeeld,
+     zoals dat voorheen per ongeluk gebeurde via het totaalbedrag. */
 
   const moneyInputs = [...document.querySelectorAll('[data-money]')];
   const areaInputs  = [...document.querySelectorAll('[data-area]')];
+  const priceInput  = document.querySelector('#price-perch');
 
   const areaInM2 = {
     perch: 25.29285264,
@@ -142,20 +163,28 @@
   let updating = false;
 
   function updateSummary() {
-    document.querySelector('#total-eur').textContent =
-      currentMoneyEUR !== null ? HF.formatEUR(currentMoneyEUR, 0) : '—';
+    const price = HF.parseNumber(priceInput.value); // LKR per perch
+    const hint = document.querySelector('#price-hint');
 
-    if (currentMoneyEUR !== null && currentAreaM2 && currentAreaM2 > 0) {
-      document.querySelector('#per-perch').textContent =
-        HF.formatEUR(currentMoneyEUR / (currentAreaM2 / areaInM2.perch), 0);
+    if (price !== null && currentAreaM2 && currentAreaM2 > 0) {
+      const perchCount = currentAreaM2 / areaInM2.perch;
+      const totalEUR = (price * perchCount) / eurRates.LKR;
+
+      document.querySelector('#total-eur').textContent = HF.formatEUR(totalEUR, 0);
+      document.querySelector('#per-perch').textContent = HF.formatEUR(price / eurRates.LKR, 0);
       document.querySelector('#per-ha').textContent =
-        HF.formatEUR(currentMoneyEUR / (currentAreaM2 / 10000), 0);
+        HF.formatEUR((price / eurRates.LKR) * (10000 / areaInM2.perch), 0);
       document.querySelector('#per-m2').textContent =
-        HF.formatEUR(currentMoneyEUR / currentAreaM2, 2);
+        HF.formatEUR((price / eurRates.LKR) / areaInM2.perch, 2);
+      hint.textContent = `${HF.formatNumber(perchCount, 2)} perch × ${HF.formatNumber(price, 0)} LKR/perch, koers 1 € = ${HF.formatNumber(eurRates.LKR, 0)} LKR.`;
     } else {
+      document.querySelector('#total-eur').textContent = '—';
       document.querySelector('#per-perch').textContent = '—';
       document.querySelector('#per-ha').textContent = '—';
       document.querySelector('#per-m2').textContent = '—';
+      hint.textContent = price !== null && !currentAreaM2
+        ? 'Vul ook een oppervlakte in om de totalen te berekenen.'
+        : '';
     }
   }
 
@@ -212,11 +241,13 @@
   }
 
   moneyInputs.forEach(input => input.addEventListener('input', () => updateMoney(input)));
-  areaInputs.forEach(input => input.addEventListener('input', () => updateArea(input)));
+  areaInputs.forEach(input => input.addEventListener('input', () => { updateArea(input); }));
+  priceInput.addEventListener('input', updateSummary);
 
   document.querySelector('#reset').addEventListener('click', () => {
     updating = true;
     [...moneyInputs, ...areaInputs].forEach(i => i.value = '');
+    priceInput.value = '';
     updating = false;
     currentMoneyEUR = null;
     currentAreaM2 = null;
@@ -252,6 +283,7 @@
     // Herbereken met de nieuwe koersen als er al iets is ingevuld.
     const filled = moneyInputs.find(i => HF.parseNumber(i.value) !== null);
     if (filled) updateMoney(filled);
+    updateSummary();
   }
 
   // De rekentool werkt meteen, ook voordat een online koers is opgehaald.
