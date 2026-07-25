@@ -19,13 +19,17 @@
   <header class="hero" style="padding-top:0">
     <div class="orb" aria-hidden="true" style="--orb-size:150px"></div>
     <h1>Landprijs<br>omrekenaar</h1>
-    <p class="lede">Vul de vraagprijs per perch in — in LKR, USD of EUR, maakt niet uit — en de oppervlakte. De totaalprijs verschijnt hieronder in euro.</p>
+    <p class="lede">Vul de vraagprijs in — in LKR, USD of EUR — en de oppervlakte. Kies of het bedrag de totaalprijs is of de prijs per perch.</p>
   </header>
 
   <div class="columns">
 
     <section class="card" aria-labelledby="h-money">
-      <h2 id="h-money">Vraagprijs per perch</h2>
+      <h2 id="h-money">Vraagprijs</h2>
+      <div class="seg" role="group" aria-label="Wat betekent het bedrag?">
+        <button type="button" id="mode-total" aria-pressed="true">Totaalprijs</button>
+        <button type="button" id="mode-perch" aria-pressed="false">Per perch</button>
+      </div>
       <div class="field">
         <label for="money-lkr">Sri Lankaanse roepie</label>
         <div class="input-wrap">
@@ -121,10 +125,12 @@
 
 <script src="../../assets/script.js"></script>
 <script>
-  /* "Vraagprijs per perch" (LKR/USD/EUR) en "Oppervlakte" zijn twee
-     onafhankelijke omrekenaars. currentMoneyEUR is dus de prijs per perch
-     in euro; de totaalprijs is die waarde × het aantal perch uit de
-     oppervlakte — vermenigvuldigen, niet delen. */
+  /* De vraagprijs (LKR/USD/EUR) en de oppervlakte zijn twee onafhankelijke
+     omrekenaars. De schakelaar bepaalt wat het ingevulde bedrag betekent:
+       'total' → het bedrag is de totaalprijs voor het hele stuk
+       'perch' → het bedrag is de prijs per perch
+     Beide modi leiden tot dezelfde vier uitkomsten, alleen de richting van
+     de berekening verschilt (delen versus vermenigvuldigen). */
 
   const moneyInputs = [...document.querySelectorAll('[data-money]')];
   const areaInputs  = [...document.querySelectorAll('[data-area]')];
@@ -139,8 +145,9 @@
   // Ingebouwde back-upkoersen zodat de tool ook offline/preview werkt.
   // Online worden deze waar mogelijk automatisch ververst.
   let eurRates = { EUR: 1, USD: 1.17, LKR: 360 };
-  let currentMoneyEUR = null; // prijs per perch, in euro
+  let currentMoneyEUR = null; // het ingevulde bedrag, in euro
   let currentAreaM2 = null;
+  let priceMode = 'total';    // 'total' | 'perch'
   let updating = false;
 
   function updateSummary() {
@@ -148,15 +155,21 @@
 
     if (currentMoneyEUR !== null && currentAreaM2 && currentAreaM2 > 0) {
       const perchCount = currentAreaM2 / areaInM2.perch;
-      const totalEUR = currentMoneyEUR * perchCount;
+
+      // Reken alles terug naar deze twee waarden:
+      const totalEUR = priceMode === 'total' ? currentMoneyEUR : currentMoneyEUR * perchCount;
+      const perPerch = priceMode === 'total' ? currentMoneyEUR / perchCount : currentMoneyEUR;
 
       document.querySelector('#total-eur').textContent = HF.formatEUR(totalEUR, 0);
-      document.querySelector('#per-perch').textContent = HF.formatEUR(currentMoneyEUR, 0);
+      document.querySelector('#per-perch').textContent = HF.formatEUR(perPerch, 0);
       document.querySelector('#per-ha').textContent =
-        HF.formatEUR(currentMoneyEUR * (10000 / areaInM2.perch), 0);
+        HF.formatEUR(totalEUR / (currentAreaM2 / 10000), 0);
       document.querySelector('#per-m2').textContent =
-        HF.formatEUR(currentMoneyEUR / areaInM2.perch, 2);
-      hint.textContent = `${HF.formatNumber(perchCount, 2)} perch × ${HF.formatEUR(currentMoneyEUR, 0)} per perch.`;
+        HF.formatEUR(totalEUR / currentAreaM2, 2);
+
+      hint.textContent = priceMode === 'total'
+        ? `${HF.formatEUR(totalEUR, 0)} voor ${HF.formatNumber(perchCount, 2)} perch.`
+        : `${HF.formatNumber(perchCount, 2)} perch × ${HF.formatEUR(perPerch, 0)} per perch.`;
     } else {
       document.querySelector('#total-eur').textContent = '—';
       document.querySelector('#per-perch').textContent = '—';
@@ -167,6 +180,20 @@
         : '';
     }
   }
+
+  /* Schakelaar: totaalprijs of prijs per perch */
+  const btnTotal = document.querySelector('#mode-total');
+  const btnPerch = document.querySelector('#mode-perch');
+
+  function setMode(mode) {
+    priceMode = mode;
+    btnTotal.setAttribute('aria-pressed', String(mode === 'total'));
+    btnPerch.setAttribute('aria-pressed', String(mode === 'perch'));
+    updateSummary();
+  }
+
+  btnTotal.addEventListener('click', () => setMode('total'));
+  btnPerch.addEventListener('click', () => setMode('perch'));
 
   function updateMoney(source) {
     if (updating || !eurRates) return;
