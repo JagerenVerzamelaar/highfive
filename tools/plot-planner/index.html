@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
-<meta name="theme-color" content="#f7f3ee">
+<meta name="theme-color" content="#efe7f6">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Surface Plot Planner — High Five</title>
 <meta name="description" content="Plan cabins, hoofdgebouw en voorzieningen op je kavel, met privacycirkels en clash-detectie.">
@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#f7f3ee; --panel:#FFFFFF; --ink:#1a1a1a; --muted:#68635f; --line:#e3ded7;
-  --accent:#1e3d2f; --accent-soft:#e6eee8; --warn:#e8472a; --warn-soft:#fdeae4;
+  --paper:#efe7f6; --panel:#FFFFFF; --ink:#1a1a1a; --muted:#6f6478; --line:#e2d6ec;
+  --accent:#1e3d2f; --accent-soft:#e6eee8; --warn:#e8501e; --warn-soft:#fbe4da;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --sans:"Inter",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
 }
@@ -64,10 +64,6 @@ input.plain:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .seg button{flex:1;background:none;border:none;color:var(--muted);font-size:14px;height:50px}
 .seg button.on{background:var(--ink);color:#fff;font-weight:600}
 
-.stats{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:18px}
-.stats div{flex:1;padding:12px 4px;text-align:center}
-.stats b{display:block;font-family:var(--mono);font-size:19px;font-weight:600}
-.stats span{font-size:10.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 
 h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
   font-weight:600;margin:24px 0 12px}
@@ -79,7 +75,7 @@ td:last-child{text-align:right;color:var(--ink)}
   background:var(--panel);border:1px solid var(--line);color:var(--ink);margin-top:10px}
 .wide.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .wide.ghost{border:none;color:var(--muted);font-weight:500}
-.wide.danger{color:var(--warn);border-color:#f3cabc}
+.wide.danger{color:var(--warn);border-color:#f5c6b2}
 
 .note{font-size:14px;line-height:1.5;padding:12px 14px;border-radius:10px;margin-top:10px;
   background:var(--warn-soft);color:#a03318}
@@ -108,7 +104,7 @@ td:last-child{text-align:right;color:var(--ink)}
 .chips button{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
   color:var(--ink);font-size:15px;height:56px;display:flex;align-items:center;gap:11px;
   padding:0 13px;text-align:left}
-.chips button.on{border-color:var(--ink);background:#f3efe8}
+.chips button.on{border-color:var(--ink);background:#f1eaf7}
 .chips .sw{width:15px;height:15px;border-radius:4px;flex:0 0 15px}
 .acts{display:flex;gap:12px;margin-top:6px}
 .acts button{flex:1;height:56px;border-radius:12px;font-size:16px;font-weight:600;
@@ -206,12 +202,6 @@ function plotPanel(){
   const cabins=S.items.filter(i=>i.priv);
   const eur=v=>'€ '+nf(v);
   $('body').innerHTML=`
-    <div class="stats">
-      <div><b>${nf(A)}</b><span>m²</span></div>
-      <div><b>${nf(A/PERCH)}</b><span>perch</span></div>
-      <div><b>${nf2(A/ACRE)}</b><span>acre</span></div>
-      <div><b>${nf2(A/HA)}</b><span>ha</span></div>
-    </div>
     <div class="seg">
       <button id="mo1" class="${S.mode==='perch'?'on':''}">Perch</button>
       <button id="mo2" class="${S.mode==='sides'?'on':''}">Breedte × lengte</button>
@@ -228,20 +218,27 @@ function plotPanel(){
         <div><label>Lengte (m)</label><input class="plain" type="number" id="pl" value="${S.plot.l}" inputmode="numeric"></div>
       </div>
     </div>
+    <div class="field"><label>Aantal cabins</label>
+      <div class="num"><button data-n="cab" data-d="-1">−</button>
+        <input type="number" id="cab" value="${cabins.length}" inputmode="numeric">
+        <button data-n="cab" data-d="1">+</button></div>
+    </div>
     <div class="two field">
       <div><label>Rand vrijhouden (m)</label><input class="plain" type="number" id="sb" value="${S.sb}" inputmode="numeric"></div>
       <div><label>Privacy cabins (m)</label><input class="plain" type="number" id="pr" value="${S.pr}" inputmode="numeric"></div>
     </div>
 
     <h3>Prijs</h3>
-    <div class="field"><label>Euro per perch</label>
+    <div class="field"><label>LKR per perch</label>
       <input class="plain" type="number" id="ppp" value="${S.price||''}" inputmode="numeric"></div>
     ${S.price?`<table>
-      <tr><td>Totaal</td><td><b>${eur(S.price*A/PERCH)}</b></td></tr>
-      <tr><td>Per m²</td><td>€ ${nf2(S.price/PERCH)}</td></tr>
-      <tr><td>Per acre</td><td>${eur(S.price*160)}</td></tr>
-      <tr><td>Per hectare</td><td>${eur(S.price*HA/PERCH)}</td></tr>
-    </table>`:''}
+      <tr><td>Totaal</td><td><b>${eur(S.price/RATE*A/PERCH)}</b></td></tr>
+      <tr><td>Per perch</td><td>€ ${nf(S.price/RATE)}</td></tr>
+      <tr><td>Per m²</td><td>€ ${nf2(S.price/RATE/PERCH)}</td></tr>
+      <tr><td>Per acre</td><td>${eur(S.price/RATE*160)}</td></tr>
+      <tr><td>Per hectare</td><td>${eur(S.price/RATE*HA/PERCH)}</td></tr>
+    </table>
+    <p class="hint">Koers: 1 € = ${nf(RATE)} LKR (indicatief${RATE_LIVE?', vandaag opgehaald':''}).</p>`:''}
 
     ${flags(used,cabins)}
     <button class="wide ghost" id="saveBtn">Plan opslaan</button>
@@ -259,6 +256,7 @@ function plotPanel(){
   if(plEl)plEl.oninput=e=>{S.plot.l=clamp(+e.target.value||10,10,900);fit();draw();refreshStats();};
   $('sb').oninput=e=>{S.sb=clamp(+e.target.value||0,0,60);draw();};
   $('pr').oninput=e=>{S.pr=clamp(+e.target.value||0,0,80);draw();};
+  $('cab').oninput=e=>{setCabins(clamp(Math.round(+e.target.value||0),0,60));};
   $('ppp').oninput=e=>{S.price=+e.target.value||0;refreshStats();};
   $('saveBtn').onclick=save; $('openBtn').onclick=()=>$('file').click();
   $('file').onchange=open;
@@ -266,6 +264,29 @@ function plotPanel(){
 /* prijs/stat-verversing zonder het hele paneel te herbouwen (focusbehoud) */
 let statTimer=0;
 function refreshStats(){clearTimeout(statTimer);statTimer=setTimeout(()=>{if(S.sel===null)plotPanel();},700);}
+
+/* cabins bijplaatsen of (laatst toegevoegde eerst) weghalen tot het gewenste aantal */
+function setCabins(n){
+  const cur=S.items.filter(i=>i.priv);
+  if(n>cur.length){
+    const p=PRESETS[0];
+    for(let i=cur.length;i<n;i++){const s=findSpot(p.w,p.l);
+      S.items.push({id:S.next++,name:p.k,w:p.w,l:p.l,x:s.x,y:s.y,c:p.c,priv:true,anchor:false});}
+  }else if(n<cur.length){
+    const kill=new Set(cur.slice(n).map(t=>t.id));
+    S.items=S.items.filter(i=>!kill.has(i.id));
+    if(kill.has(S.sel))S.sel=null;
+  }
+  draw();refreshStats();
+}
+
+/* LKR per euro: ingebouwde indicatieve koers, online ververst waar mogelijk */
+let RATE=360,RATE_LIVE=false;
+fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json',{cache:'no-store'})
+  .then(r=>r.ok?r.json():null)
+  .then(d=>{if(d&&d.eur&&d.eur.lkr){RATE=Number(d.eur.lkr);RATE_LIVE=true;
+    if(S.sel===null&&document.activeElement.id!=='ppp')plotPanel();}})
+  .catch(()=>{});
 
 function flags(used,cabins){
   const A=S.plot.w*S.plot.l,f=[];
@@ -280,11 +301,15 @@ function flags(used,cabins){
 }
 /* privacy-straal vanaf de gevel: groeit mee met de cabin */
 const privR=it=>S.pr+Math.hypot(it.w,it.l)/2;
+/* halve diagonaal: benadering van de gevel vanaf het middelpunt */
+const halfD=it=>Math.hypot(it.w,it.l)/2;
+/* rood pas wanneer een cabin zelf binnen de privacycirkel van de ander komt */
+const inClash=(a,b)=>Math.hypot(a.x+a.w/2-b.x-b.w/2,a.y+a.l/2-b.y-b.l/2)<S.pr+halfD(a)+halfD(b);
 function clashCount(cabins){
   const c=new Set();
   for(let i=0;i<cabins.length;i++)for(let j=i+1;j<cabins.length;j++){
     const a=cabins[i],b=cabins[j];
-    if(Math.hypot(a.x+a.w/2-b.x-b.w/2,a.y+a.l/2-b.y-b.l/2)<privR(a)+privR(b)){c.add(a.id);c.add(b.id);}
+    if(inClash(a,b)){c.add(a.id);c.add(b.id);}
   }
   return c.size;
 }
@@ -377,27 +402,27 @@ function draw(){
 
   /* perceel: papier met dun raster van 10 m */
   g+=`<rect x="0" y="0" width="${w}" height="${l}" fill="#FFFFFF" stroke="#1a1a1a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
-  for(let x=10;x<w;x+=10)g+=`<line x1="${x}" y1="0" x2="${x}" y2="${l}" stroke="#edeae3" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
-  for(let y=10;y<l;y+=10)g+=`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#edeae3" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  for(let x=10;x<w;x+=10)g+=`<line x1="${x}" y1="0" x2="${x}" y2="${l}" stroke="#ece4f4" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  for(let y=10;y<l;y+=10)g+=`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#ece4f4" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
   if(S.sb>0&&S.sb*2<Math.min(w,l))
     g+=`<rect x="${S.sb}" y="${S.sb}" width="${w-2*S.sb}" height="${l-2*S.sb}" fill="none"
-        stroke="#b9b3a9" stroke-width="1" stroke-dasharray="${fs*.45} ${fs*.45}" vector-effect="non-scaling-stroke"/>`;
+        stroke="#b3a6c2" stroke-width="1" stroke-dasharray="${fs*.45} ${fs*.45}" vector-effect="non-scaling-stroke"/>`;
 
   /* maatvoering */
-  g+=`<text x="${w/2}" y="${-fs*.6}" font-size="${fs*.85}" text-anchor="middle" fill="#68635f" font-family="ui-monospace,monospace">${w} m</text>
-      <text x="${-fs*.6}" y="${l/2}" font-size="${fs*.85}" text-anchor="middle" fill="#68635f"
+  g+=`<text x="${w/2}" y="${-fs*.6}" font-size="${fs*.85}" text-anchor="middle" fill="#6f6478" font-family="ui-monospace,monospace">${w} m</text>
+      <text x="${-fs*.6}" y="${l/2}" font-size="${fs*.85}" text-anchor="middle" fill="#6f6478"
         font-family="ui-monospace,monospace" transform="rotate(-90 ${-fs*.6} ${l/2})">${l} m</text>`;
 
   /* privacy */
   const clash=new Set();
   for(let i=0;i<cabins.length;i++)for(let j=i+1;j<cabins.length;j++){
     const a=cabins[i],b=cabins[j];
-    if(Math.hypot(a.x+a.w/2-b.x-b.w/2,a.y+a.l/2-b.y-b.l/2)<privR(a)+privR(b)){clash.add(a.id);clash.add(b.id);}
+    if(inClash(a,b)){clash.add(a.id);clash.add(b.id);}
   }
   if(S.pr>0)cabins.forEach(c=>{const bad=clash.has(c.id);
     g+=`<circle cx="${c.x+c.w/2}" cy="${c.y+c.l/2}" r="${privR(c)}"
-        fill="${bad?'rgba(232,71,42,.09)':'rgba(30,61,47,.05)'}"
-        stroke="${bad?'#e8472a':'#b7c9bd'}" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`;});
+        fill="${bad?'rgba(232,80,30,.09)':'rgba(30,61,47,.05)'}"
+        stroke="${bad?'#e8501e':'#b7c9bd'}" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`;});
 
   /* looplijn */
   let walk=0;
@@ -405,7 +430,7 @@ function draw(){
     const ax=anchor.x+anchor.w/2,ay=anchor.y+anchor.l/2;let far=null;
     cabins.forEach(c=>{const d=Math.abs(c.x+c.w/2-ax)+Math.abs(c.y+c.l/2-ay);if(d>walk){walk=d;far=c;}});
     if(far)g+=`<polyline points="${far.x+far.w/2},${far.y+far.l/2} ${ax},${far.y+far.l/2} ${ax},${ay}"
-      fill="none" stroke="#68635f" stroke-width="1" stroke-dasharray="${fs*.6} ${fs*.4}" vector-effect="non-scaling-stroke"/>`;
+      fill="none" stroke="#6f6478" stroke-width="1" stroke-dasharray="${fs*.6} ${fs*.4}" vector-effect="non-scaling-stroke"/>`;
   }
 
   /* objecten: vlakke rechthoeken */
@@ -437,8 +462,7 @@ function readout(walk,anchor,cabins){
   const used=S.items.reduce((s,i)=>s+i.w*i.l,0),cab=cabins.reduce((s,i)=>s+i.w*i.l,0);
   const per=cabins.length?(A-(used-cab))/cabins.length:0;
   $('readout').innerHTML=
-    `<b>${nf(A/PERCH)} perch</b> · ${nf2(A/ACRE)} acre<br>`
-    +(cabins.length?`${cabins.length} cabins · <b>${nf(per)} m²</b> per cabin<br>`:'')
+    (cabins.length?`<b>${cabins.length} cabins</b> · ${nf(per)} m² per cabin<br>`:'')
     +(anchor&&cabins.length?`loopafstand max ${nf(walk)} m`:'');
 }
 

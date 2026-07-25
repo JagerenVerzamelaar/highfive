@@ -40,8 +40,8 @@ geen build-stap, direct te publiceren via GitHub Pages.
      titel: 'ROI Calculator',
      beschrijving: 'Rendement per geïnvesteerde euro.',
      href: 'tools/roi/',
-     orb:  ['#ffd9c6', '#d8ecea'],   // kleuren van de gradientbol
-     wash: ['#fdf6f1', '#f2f8f7'],   // achtergrondwas van het kaartvlak
+     bg: 'var(--lime)',      fg: 'var(--green)',      // kleurblok
+     pillBg: 'var(--green)', pillFg: 'var(--lime)',   // sticker-pill
    }
    ```
    De kaart op de homepage verschijnt automatisch.
@@ -65,16 +65,18 @@ geen build-stap, direct te publiceren via GitHub Pages.
 4. Klaar — alle paden zijn relatief, dus de site werkt ook onder
    `https://<gebruiker>.github.io/<repo>/`.
 
-## Ontwerpprincipes
+## Ontwerpprincipes — "Nieuwe luxe"
 
+- **Palet**: lila (`--lilac`) als basis, vermiljoen (`--vermilion`) en
+  acid-lime (`--lime`) als accenten, forest green (`--green`) als merkanker.
+- **Typografie**: Fraunces (display-serif) voor koppen, Inter voor de rest.
+- **Kleurblok-kaarten**: elke tool krijgt een eigen kleurblok + sticker-pill;
+  kleuren staan per tool in `HF.TOOLS` (`bg`, `fg`, `pillBg`, `pillFg`).
+- **Beweging**: marquee-strip en zwevende gradient-blob; beide respecteren
+  `prefers-reduced-motion`.
 - **Mobile-first**: ontworpen voor telefoons, schaalt mee naar desktop.
-- **Orb als signatuur**: elke tool krijgt een eigen blush-gradientbol met
-  pill-label; kleuren staan per tool in `HF.TOOLS`.
-- **Tokens in `:root`**: kleuren, spacing, radius en schaduwen op één plek.
-- **Toegankelijk**: labels, `aria-live` voor resultaten, zichtbare focus,
-  `prefers-reduced-motion` gerespecteerd.
-- **Geen dark mode** (bewuste keuze): het blush-palet is de identiteit.
-  Eenvoudig later toe te voegen via extra tokens in `style.css`.
+- **Toegankelijk**: labels, `aria-live` voor resultaten, zichtbare focus.
+- **Geen dark mode** (bewuste keuze): het kleurblok-palet is de identiteit.
 
 ## Notities
 

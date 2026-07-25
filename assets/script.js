@@ -1,7 +1,7 @@
 /* ==========================================================================
-   High Five — gedeeld JavaScript
+   High Five — gedeeld JavaScript (v2)
    - HF.TOOLS: het register. Nieuwe tool toevoegen = één object toevoegen.
-   - HF.renderTools(): bouwt de kaarten op de homepage.
+   - HF.renderTools(): bouwt de kleurblok-kaarten op de homepage.
    - HF.parseNumber / HF.formatEUR / …: hulpfuncties voor alle tools.
    ========================================================================== */
 
@@ -10,8 +10,8 @@ window.HF = (() => {
 
   /* ---- Toolregister ------------------------------------------------------
      Nieuwe tool? Voeg hier één object toe en maak /tools/<id>/index.html.
-     orb  : [kleurA, kleurB]  → de gradientbol op de kaart
-     wash : [kleurA, kleurB]  → de achtergrondwas van het kaartvlak
+     bg / fg          → kleurblok van de kaart (achtergrond / tekst)
+     pillBg / pillFg  → kleuren van de sticker-pill
   ------------------------------------------------------------------------- */
   const TOOLS = [
     {
@@ -20,8 +20,8 @@ window.HF = (() => {
       titel: 'Landprijs omrekenaar',
       beschrijving: 'LKR, USD en EUR per perch, acre, hectare en m².',
       href: 'tools/land-price/',
-      orb:  ['#ffd9c6', '#dcedde'],
-      wash: ['#fdf6f1', '#f1f7f0'],
+      bg: 'var(--lime)',      fg: 'var(--green)',
+      pillBg: 'var(--green)', pillFg: 'var(--lime)',
     },
     {
       id: 'plot-planner',
@@ -29,8 +29,8 @@ window.HF = (() => {
       titel: 'Surface Plot Planner',
       beschrijving: 'Cabins, privacycirkels en clash-detectie op je kavel.',
       href: 'tools/plot-planner/',
-      orb:  ['#d8ecea', '#fbe4ea'],
-      wash: ['#f2f8f7', '#fbf4f6'],
+      bg: 'var(--vermilion)', fg: 'var(--lilac)',
+      pillBg: 'var(--lilac)', pillFg: 'var(--vermilion)',
     },
   ];
 
@@ -39,20 +39,14 @@ window.HF = (() => {
     const grid = document.getElementById(containerId);
     if (!grid) return;
 
-    grid.innerHTML = TOOLS.map(t => `
-      <a class="tool-card" href="${t.href}" aria-label="${t.titel}">
-        <div class="tool-visual"
-             style="--card-wash-a:${t.wash[0]};--card-wash-b:${t.wash[1]}">
-          <div class="orb" style="--orb-a:${t.orb[0]};--orb-b:${t.orb[1]}" aria-hidden="true"></div>
-          <span class="pill">${t.pill}</span>
-        </div>
-        <div class="tool-meta">
-          <div>
-            <h2>${t.titel}</h2>
-            <p>${t.beschrijving}</p>
-          </div>
-          <span class="arrow" aria-hidden="true">→</span>
-        </div>
+    grid.innerHTML = TOOLS.map((t, i) => `
+      <a class="tool-card" href="${t.href}" aria-label="${t.titel}"
+         style="--card-bg:${t.bg};--card-fg:${t.fg}">
+        <span class="pill ${i % 2 ? 'tilt-r' : 'tilt-l'}"
+              style="background:${t.pillBg};color:${t.pillFg}">${t.pill}</span>
+        <h2>${t.titel}</h2>
+        <p>${t.beschrijving}</p>
+        <span class="arrow" aria-hidden="true">→</span>
       </a>
     `).join('');
   }
