@@ -32,23 +32,41 @@ window.HF = (() => {
       bg: 'var(--vermilion)', fg: 'var(--lilac)',
       pillBg: 'var(--lilac)', pillFg: 'var(--vermilion)',
     },
+    {
+      id: 'kavels',
+      pill: 'Notion',
+      titel: 'Kavels Sri Lanka',
+      beschrijving: 'Het complete overzicht van kavels, juni 2026.',
+      href: 'https://app.notion.com/p/Kavels-Sri-juni-2026-3aadd7efede580a1bdc0fbca83c7172e',
+      extern: true,
+      bg: 'var(--green)',     fg: 'var(--lime)',
+      pillBg: 'var(--lime)',  pillFg: 'var(--green)',
+    },
   ];
 
   /* ---- Kaart-rendering --------------------------------------------------- */
+  /* Externe links (extern: true) openen in een nieuw tabblad en krijgen een
+     diagonale pijl, zodat zichtbaar is dat je de site verlaat. */
   function renderTools(containerId = 'tools') {
     const grid = document.getElementById(containerId);
     if (!grid) return;
 
-    grid.innerHTML = TOOLS.map((t, i) => `
-      <a class="tool-card" href="${t.href}" aria-label="${t.titel}"
+    grid.innerHTML = TOOLS.map((t, i) => {
+      const ext = t.extern
+        ? ' target="_blank" rel="noopener noreferrer"'
+        : '';
+      const label = t.extern ? `${t.titel} (opent in nieuw tabblad)` : t.titel;
+
+      return `
+      <a class="tool-card" href="${t.href}" aria-label="${label}"${ext}
          style="--card-bg:${t.bg};--card-fg:${t.fg}">
         <span class="pill ${i % 2 ? 'tilt-r' : 'tilt-l'}"
               style="background:${t.pillBg};color:${t.pillFg}">${t.pill}</span>
         <h2>${t.titel}</h2>
         <p>${t.beschrijving}</p>
-        <span class="arrow" aria-hidden="true">→</span>
-      </a>
-    `).join('');
+        <span class="arrow" aria-hidden="true">${t.extern ? '↗' : '→'}</span>
+      </a>`;
+    }).join('');
   }
 
   /* ---- Getallen: parsen -------------------------------------------------- */
